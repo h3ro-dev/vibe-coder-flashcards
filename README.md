@@ -27,6 +27,12 @@ npm install
 npm run dev
 ```
 
+## Environment variables
+
+| Variable     | Purpose                               | Default                   |
+| ------------ | ------------------------------------- | ------------------------- |
+| `WORKER_URL` | Base URL of the worker API consumed by the Next.js routes | `http://localhost:8000` |
+
 ## Engineering Principles (Elon Musk’s 5 steps)
 
 1. **Question every requirement** – keep only what drives engagement.  
