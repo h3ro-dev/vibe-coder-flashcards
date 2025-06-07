@@ -18,7 +18,8 @@ infra/github/       – CI / CD workflows
 ```bash
 # Back-end worker
 python -m venv .venv && source .venv/bin/activate
-pip install -r apps/worker/requirements.txt
+# install Python dependencies from the repository root
+pip install -r requirements.txt
 uvicorn apps.worker.main:app --reload
 
 # Front-end (needs Node ≥ 18)

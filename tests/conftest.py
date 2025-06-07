@@ -8,7 +8,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 # use in-memory database for tests
-os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
+os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///:memory:")
 import pytest
 from alembic import command
 from alembic.config import Config
