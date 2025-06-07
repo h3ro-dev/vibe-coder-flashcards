@@ -6,7 +6,7 @@ import asyncio
 import os
 from logging.config import fileConfig
 
-from sqlalchemy import pool
+from sqlalchemy import pool, create_engine
 from sqlalchemy.ext.asyncio import async_engine_from_config
 from sqlmodel import SQLModel
 
@@ -47,15 +47,21 @@ async def run_migrations_online() -> None:
     configuration = config.get_section(config.config_ini_section)
     url = os.getenv("DATABASE_URL", configuration.get("sqlalchemy.url"))
     configuration["sqlalchemy.url"] = url
-    connectable = async_engine_from_config(
-        configuration,
-        prefix="sqlalchemy.",
-        poolclass=pool.NullPool,
-    )
 
-    async with connectable.connect() as connection:
-        await connection.run_sync(do_run_migrations)
-    await connectable.dispose()
+    if url.startswith("sqlite") and "+aiosqlite" not in url:
+        connectable = create_engine(url, poolclass=pool.NullPool, future=True)
+        with connectable.begin() as connection:
+            do_run_migrations(connection)
+    else:
+        connectable = async_engine_from_config(
+            configuration,
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
+
+        async with connectable.connect() as connection:
+            await connection.run_sync(do_run_migrations)
+        await connectable.dispose()
 
 
 if context.is_offline_mode():

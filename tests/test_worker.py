@@ -75,3 +75,53 @@ def test_flashcards_route_schema():
             assert set(card) == {"id", "question", "answer"}
 
     anyio.run(run)
+
+
+def test_review_route_updates_schedule():
+    async def run():
+        from sqlmodel import Session
+        from apps.worker import engine
+        from packages.core.models import User, Feed, Post, Flashcard as DBFlashcard
+        # manually create entities to avoid unique constraints
+        with Session(engine) as ses:
+            user = User(email="demo2@example.com")
+            feed = Feed(handle="manual2")
+            ses.add(user)
+            ses.add(feed)
+            ses.commit()
+            ses.refresh(user)
+            ses.refresh(feed)
+
+            post = Post(feed_id=feed.id, tweet_id="manual2", text="hi")
+            ses.add(post)
+            ses.commit()
+            ses.refresh(post)
+
+            card = DBFlashcard(
+                owner_id=user.id,
+                post_id=post.id,
+                question="Q",
+                answer="A",
+            )
+            ses.add(card)
+            ses.commit()
+            ses.refresh(card)
+            card_id = card.id
+
+        resp = await request(
+            "POST",
+            "/review",
+            json={"flashcard_id": card_id, "quality": 5},
+        )
+        assert resp.status_code == 200
+
+        import datetime as dt
+
+        with Session(engine) as ses:
+            card = ses.get(DBFlashcard, card_id)
+            assert card.repetitions == 1
+            assert card.interval == 1
+            assert round(card.ease_factor, 1) == 2.6
+            assert card.next_review == dt.date.today() + dt.timedelta(days=1)
+
+    anyio.run(run)
