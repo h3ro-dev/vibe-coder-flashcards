@@ -27,3 +27,8 @@ jobs:
         with:
           pull-request-number: ${{ github.event.workflow_run.pull_requests[0].number }}
           merge-method: squash
+      - name: Delete branch
+        uses: peter-evans/delete-branch@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.event.workflow_run.pull_requests[0].head.ref }}
