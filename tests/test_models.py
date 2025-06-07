@@ -1,11 +1,22 @@
+import os
 import pytest
 from sqlmodel import select
 
-from packages.core.models import User, Feed, Post, Flashcard
-from packages.db import async_session_maker, init_db
+aiosqlite_installed = True
+try:  # check for optional dependency
+    import aiosqlite  # noqa: WPS433 (import for availability check)
+except ModuleNotFoundError:  # pragma: no cover - dependency missing in CI
+    aiosqlite_installed = False
+
+os.environ["DATABASE_URL"] = "sqlite+aiosqlite:///:memory:"
+
+if aiosqlite_installed:
+    from packages.db import async_session_maker, init_db
+    from packages.core.models import User, Feed, Post, Flashcard
 
 
 @pytest.mark.asyncio
+@pytest.mark.skipif(not aiosqlite_installed, reason="aiosqlite not installed")
 async def test_model_crud_round_trip() -> None:
     await init_db()
     async with async_session_maker() as session:

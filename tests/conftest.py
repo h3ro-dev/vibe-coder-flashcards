@@ -12,12 +12,19 @@ os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 import pytest
 from alembic import command
 from alembic.config import Config
+from apps.worker import init_db as sync_init_db
 
 
 @pytest.fixture(scope="session", autouse=True)
 def apply_migrations() -> None:
     """Apply Alembic migrations before tests run."""
 
-    cfg = Config(str(ROOT / "alembic.ini"))
-    command.upgrade(cfg, "head")
-    yield
+    try:
+        import aiosqlite  # noqa: WPS433
+    except ModuleNotFoundError:
+        sync_init_db()
+        yield
+    else:
+        cfg = Config(str(ROOT / "alembic.ini"))
+        command.upgrade(cfg, "head")
+        yield

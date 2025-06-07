@@ -135,17 +135,16 @@ async def review(payload: ReviewIn) -> ReviewOut:
         if not card:
             raise HTTPException(status_code=404, detail="Flashcard not found")
 
-        next_review, ease, interval, reps = sm2(
-            dt.date.today(),
-            payload.quality,
-            card.ease_factor,
-            card.interval,
+        reps, interval, ease = sm2(
             card.repetitions,
+            card.interval,
+            card.ease_factor,
+            payload.quality,
         )
-        card.next_review = next_review
-        card.ease_factor = ease
-        card.interval = interval
         card.repetitions = reps
+        card.interval = interval
+        card.ease_factor = ease
+        card.next_review = dt.date.today() + dt.timedelta(days=interval)
         ses.add(card)
         ses.commit()
         ses.refresh(card)
